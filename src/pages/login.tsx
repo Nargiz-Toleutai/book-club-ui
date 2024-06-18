@@ -7,6 +7,9 @@ interface User {
 
 const Login = ({ id }: User) => {
   const router = useRouter();
+  const [userName, setUserName] = useState<string>();
+  const [password, setPassword] = useState<string>();
+  const [error, setError] = useState<string>();
 
   useEffect(() => {
     const tokenFromStorage = localStorage.getItem("token");
@@ -15,26 +18,33 @@ const Login = ({ id }: User) => {
     }
   }, [router]);
 
-  const [userName, setUserName] = useState<string>();
-  const [password, setPassword] = useState<string>();
-
   const onSubmitTheForm = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
     const data = Object.fromEntries(formData);
 
-    const result = await fetch("http://localhost:3001/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-    const json = await result.json();
-    if (json.token) {
-      localStorage.setItem("token", json.token);
-      router.push("/"); // ${id}??
+    try {
+      const result = await fetch("http://localhost:3001/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      const responseData = await result.json();
+      if (responseData.token) {
+        localStorage.setItem("token", responseData.token);
+        router.push("/"); // ${id}??
+      } else {
+        setError("User does not exist. Redirecting to registration...");
+        setTimeout(() => {
+          router.push("/register");
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("Something went wrong", error);
+      setError("Something went wrong");
     }
   };
 
@@ -63,6 +73,7 @@ const Login = ({ id }: User) => {
         <button type="submit" className="login-button">
           Login
         </button>
+        {error && <p className="error-message">{error}</p>}
       </form>
     </div>
   );
