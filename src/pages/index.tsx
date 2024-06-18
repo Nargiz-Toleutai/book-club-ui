@@ -1,5 +1,5 @@
+import BookList from "@/components/BookList";
 import Layout from "@/components/Layout";
-import Navigation from "@/components/Navigation";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 
@@ -21,9 +21,8 @@ export default function Home() {
   useEffect(() => {
     const getBooks = async () => {
       try {
-        const response = await fetch("http://localhost:3001/");
+        const response = await fetch("http://localhost:3001/books");
         const bookData = await response.json();
-        console.log(bookData);
         const parsedBooks = bookArrayValidator.safeParse(bookData);
 
         if (parsedBooks.success) {
@@ -39,7 +38,9 @@ export default function Home() {
   }, []);
   return (
     <>
-      <Layout>{books ? <p>Books</p> : <p>Loading books...</p>}</Layout>
+      <Layout>
+        {books ? <BookList books={books} /> : <p>Loading books...</p>}
+      </Layout>
     </>
   );
 }
