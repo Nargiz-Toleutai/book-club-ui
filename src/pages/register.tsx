@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/router";
+import { useState } from "react";
 
 const UserDataValidator = z
   .object({
@@ -18,6 +19,7 @@ type RegisterFormData = z.infer<typeof UserDataValidator>;
 
 const Register = () => {
   const router = useRouter();
+  const [error, setError] = useState<string>();
 
   const {
     register,
@@ -38,14 +40,24 @@ const Register = () => {
       });
 
       const responseData = await response.json();
-      router.push("/");
+      if (responseData.token) {
+        localStorage.setItem("token", responseData.token);
+        router.push("/"); // ${id}??
+      } else {
+        setError("User already exists. Redirecting to login page...");
+        setTimeout(() => {
+          router.push("/login");
+        }, 3000);
+      }
     } catch (error) {
       console.error("Something went wrong", error);
+      setError("Something went wrong");
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
+      <h1>Registration</h1>
       <label htmlFor="username">Username</label>
       <input id="username" type="text" {...register("username")} />
       {errors.username && <p>{errors.username.message}</p>}
@@ -55,6 +67,7 @@ const Register = () => {
         <p className="error-message">{errors.password.message}</p>
       )}
       <button type="submit">Register</button>
+      {error && <p className="error-message">{error}</p>}
     </form>
   );
 };
