@@ -37,7 +37,7 @@ const Navigation = () => {
               localStorage.removeItem("token");
             }}
           >
-            Log out
+            <Link href="/"> Log out</Link>
           </button>
         </li>
       )}
