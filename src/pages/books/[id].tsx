@@ -3,10 +3,11 @@ import Layout from "@/components/Layout";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
-interface BookProgressData {
+export interface BookProgressData {
   bookId: number;
   userId: number;
   pageProgress: number;
+  book: Book;
 }
 
 interface UserData {
@@ -15,21 +16,23 @@ interface UserData {
 
 const BookDetails = ({ userId }: UserData) => {
   const router = useRouter();
-  const id = router.query.id;
+  const { id } = router.query;
   const [book, setBook] = useState<Book | null>(null);
   const [bookProgress, setBookProgress] = useState<BookProgressData | null>(
     null
   );
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const [token, setToken] = useState<string>();
 
   useEffect(() => {
-    if (id === undefined) {
-      return;
-    }
-    const getBookFromApi = async () => {
+    if (!id) return;
+    // const token = localStorage.getItem("token");
+    // if(!token) {
+    //     setAuthError("You are not authorized. Redirecting to login...");
+    // }
+    const fetchBookDetails = async () => {
       try {
         const response = await fetch(`http://localhost:3001/books/${id}`, {
+          method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -40,22 +43,19 @@ const BookDetails = ({ userId }: UserData) => {
         }
         const data = await response.json();
         setBook(data);
-        getBookProgress(data.id);
       } catch (error) {
         console.error("Error fetching book details:", error);
       }
     };
 
-    const getBookProgress = async (bookId: number) => {
+    const fetchBookProgress = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:3001/bookprogress?userId=${userId}&bookId=${bookId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await fetch(`http://localhost:3001/my-progress`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (response.ok) {
           const progressData = await response.json();
           setBookProgress(progressData);
@@ -65,25 +65,28 @@ const BookDetails = ({ userId }: UserData) => {
       }
     };
 
-    getBookFromApi();
+    fetchBookDetails();
+    fetchBookProgress();
   }, [id, token, userId]);
 
-  const handleCreateBookProgress = async (data: BookProgressData) => {
+  const handleCreateBookProgress = async () => {
     try {
       const response = await fetch("http://localhost:3001/bookprogress", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          bookId: Number(id),
+          userId,
+          pageProgress: 0,
+        }),
       });
       if (!response.ok) {
         console.error("Failed to create book progress");
         return;
       }
       const responseData = await response.json();
-      console.log(responseData);
       setBookProgress(responseData);
     } catch (error) {
       console.error("Something went wrong", error);
@@ -110,26 +113,18 @@ const BookDetails = ({ userId }: UserData) => {
           bookProgress ? (
             <h4>Book is on your reading list</h4>
           ) : (
-            <button
-              onClick={() =>
-                handleCreateBookProgress({
-                  bookId: Number(book.id),
-                  userId: userId,
-                  pageProgress: 0,
-                })
-              }
-            >
+            <button onClick={handleCreateBookProgress}>
               Start reading book
             </button>
           )
         ) : (
           <h4>Please log in to read this book</h4>
         )}
-        {bookProgress !== null && bookProgress.pageProgress > 0 && (
-          <h4>Page progress: {bookProgress.pageProgress}</h4>
-        )}
-        {book.averagePageProgress > 0 && (
+        {bookProgress && <h4>Page progress: {bookProgress.pageProgress}</h4>}
+        {book.averagePageProgress ? (
           <h4>Average page progress: {book.averagePageProgress.toFixed(1)}</h4>
+        ) : (
+          <h4>No page progress data</h4>
         )}
       </div>
     </Layout>
