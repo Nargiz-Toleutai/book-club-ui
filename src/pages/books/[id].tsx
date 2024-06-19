@@ -37,12 +37,12 @@ const BookDetails = () => {
       <h2>The author: {book.author}</h2>
       <h2>Pages: {book.pageCount}</h2>
       {book.bookProgressCount > 0 ? (
-        <h2>Current readers: {book.bookProgressCount}</h2>
+        <h4>Current readers: {book.bookProgressCount}</h4>
       ) : (
         <h4>No current readers</h4>
       )}
       {book.averagePageProgress ? (
-        <h2>Average page progress: {book.averagePageProgress.toFixed(1)}</h2>
+        <h4>Average page progress: {book.averagePageProgress.toFixed(1)}</h4>
       ) : (
         <h4>No page progress data</h4>
       )}
