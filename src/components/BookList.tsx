@@ -1,13 +1,14 @@
 import Link from "next/link";
 import React, { useEffect, useState, useCallback } from "react";
 
-interface Book {
+export interface Book {
   id: string;
   title: string;
   coverImgUrl: string;
   author: string;
   pageCount: number;
   bookProgressCount: number;
+  averagePageProgress: number;
 }
 
 const BookList: React.FC = () => {
@@ -17,7 +18,7 @@ const BookList: React.FC = () => {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const response = await fetch("http://localhost:3001/books/popular");
+        const response = await fetch("http://localhost:3001/books");
         const data = await response.json();
         const booksWithCount = data.map((book: any) => ({
           ...book,
@@ -63,7 +64,6 @@ const BookList: React.FC = () => {
             </h3>
             <img src={book.coverImgUrl} alt={book.title} />
             <p>{book.author}</p>
-            <p>Page Count: {book.pageCount}</p>
             <p>Popularity: {book.bookProgressCount}</p>
           </li>
         ))}

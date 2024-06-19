@@ -22,11 +22,9 @@ export default function Home() {
     const getBooks = async () => {
       try {
         const response = await fetch("http://localhost:3001/books");
-
         const bookData = await response.json();
-
         const parsedBooks = bookArrayValidator.safeParse(bookData);
-        console.log(bookData);
+
         if (parsedBooks.success) {
           setBooks(parsedBooks.data);
         } else {
