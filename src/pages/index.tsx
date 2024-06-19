@@ -22,25 +22,25 @@ export default function Home() {
     const getBooks = async () => {
       try {
         const response = await fetch("http://localhost:3001/books");
-        const bookData = await response.json();
-        const parsedBooks = bookArrayValidator.safeParse(bookData);
 
+        const bookData = await response.json();
+
+        const parsedBooks = bookArrayValidator.safeParse(bookData);
+        console.log(bookData);
         if (parsedBooks.success) {
           setBooks(parsedBooks.data);
         } else {
           console.error("Validation failed", parsedBooks.error);
         }
       } catch (error) {
-        console.log("Error in HTTP request");
+        console.log("Error in HTTP request", error);
       }
     };
     getBooks();
   }, []);
   return (
     <>
-      <Layout>
-        {books ? <BookList books={books} /> : <p>Loading books...</p>}
-      </Layout>
+      <Layout>{books ? <BookList /> : <p>Loading books...</p>}</Layout>
     </>
   );
 }

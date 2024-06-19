@@ -1,25 +1,73 @@
-import { Book } from "@/pages";
-import React from "react";
+import Link from "next/link";
+import React, { useEffect, useState, useCallback } from "react";
 
-type BookListProps = {
-  books: Book[];
-};
+interface Book {
+  id: string;
+  title: string;
+  coverImgUrl: string;
+  author: string;
+  pageCount: number;
+  bookProgressCount: number;
+}
 
-const BookList = ({ books }: BookListProps) => {
-  const sortedBooks = [...books].sort((a, b) => a.title.localeCompare(b.title));
+const BookList: React.FC = () => {
+  const [books, setBooks] = useState<Book[]>([]);
+  const [sortedBooks, setSortedBooks] = useState<Book[]>([]);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const response = await fetch("http://localhost:3001/books/popular");
+        const data = await response.json();
+        const booksWithCount = data.map((book: any) => ({
+          ...book,
+          bookProgressCount: book._count.bookProgress,
+        }));
+
+        setBooks(booksWithCount);
+      } catch (error) {
+        console.error("Error fetching books:", error);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
+  const sortByPopularity = useCallback(() => {
+    const sorted = [...books].sort(
+      (a, b) => b.bookProgressCount - a.bookProgressCount
+    );
+    setSortedBooks(sorted);
+  }, [books]);
+
+  const sortByName = useCallback(() => {
+    const sorted = [...books].sort((a, b) => a.title.localeCompare(b.title));
+    setSortedBooks(sorted);
+  }, [books]);
+
+  useEffect(() => {
+    if (books.length > 0) {
+      sortByName();
+    }
+  }, [books, sortByName]);
 
   return (
-    <div className="list">
-      {sortedBooks.map((book) => (
-        <div key={book.id} className="card">
-          <div className="header">
-            <h1>{book.title}</h1>
-            <h2>{book.author}</h2>
-            <img src={book.coverImgUrl} alt={`Cover of ${book.title}`} />
-            <h4>{book.pageCount} pages</h4>
-          </div>
-        </div>
-      ))}
+    <div>
+      <button onClick={sortByPopularity}>Sort by Popularity</button>
+      <button onClick={sortByName}>Sort by Name</button>
+      <ul>
+        {sortedBooks.map((book) => (
+          <li key={book.id}>
+            <h3>
+              <Link href={`/books/${book.id}`}>{book.title}</Link>
+            </h3>
+            <img src={book.coverImgUrl} alt={book.title} />
+            <p>{book.author}</p>
+            <p>Page Count: {book.pageCount}</p>
+            <p>Popularity: {book.bookProgressCount}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
