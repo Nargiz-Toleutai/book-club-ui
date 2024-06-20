@@ -64,7 +64,6 @@ const BookList: React.FC = () => {
             </h3>
             <img src={book.coverImgUrl} alt={book.title} />
             <p>{book.author}</p>
-            <p>Popularity: {book.bookProgressCount}</p>
           </li>
         ))}
       </ul>

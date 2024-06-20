@@ -4,6 +4,7 @@ import { Book } from "./BookList";
 import { z } from "zod";
 
 export interface BookProgress {
+  id: number;
   bookId: number;
   userId: number;
   pageProgress: number;
@@ -12,8 +13,7 @@ export interface BookProgress {
 
 export const ProgressDataValidator = z
   .object({
-    bookId: z.preprocess((val) => Number(val), z.number().int().positive()),
-    userId: z.preprocess((val) => Number(val), z.number().int().positive()),
+    id: z.preprocess((val) => Number(val), z.number().int().positive()),
     pageProgress: z.preprocess((val) => Number(val), z.number().positive()),
   })
   .strict();
@@ -34,21 +34,18 @@ const ProgressForm = ({ onSubmit, progress }: ProgressFormProps) => {
     resolver: zodResolver(ProgressDataValidator),
   });
 
-  console.log({ errors });
-
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <input
         type="number"
-        id={`change-pageProgress-${progress.bookId}`}
+        id={`change-pageProgress-${progress.id}`}
         className={`${errors.pageProgress ? "error-input" : ""}`}
         defaultValue={progress.pageProgress}
         min="0"
         max={progress.book?.pageCount}
         {...register("pageProgress")}
       />
-      <input hidden value={progress.userId} {...register("userId")} />
-      <input hidden value={progress.bookId} {...register("bookId")} />
+      <input hidden value={progress.id} {...register("id")} />
       {errors.pageProgress && (
         <p className="error-message">{errors.pageProgress.message}</p>
       )}
