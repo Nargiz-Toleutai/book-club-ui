@@ -1,15 +1,33 @@
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-interface User {
-  id: number;
-}
+const UserDataValidator = z
+  .object({
+    username: z.string().min(5, {
+      message: "Username should have a minimum length of 5 characters",
+    }),
+    password: z.string().min(10, {
+      message: "Password should have a minimum length of 10 characters",
+    }),
+  })
+  .strict();
 
-const Login = ({ id }: User) => {
+type User = z.infer<typeof UserDataValidator>;
+
+const Login = () => {
   const router = useRouter();
-  const [userName, setUserName] = useState<string>();
-  const [password, setPassword] = useState<string>();
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<User>({
+    resolver: zodResolver(UserDataValidator),
+  });
 
   useEffect(() => {
     const tokenFromStorage = localStorage.getItem("token");
@@ -18,58 +36,54 @@ const Login = ({ id }: User) => {
     }
   }, [router]);
 
-  const onSubmitTheForm = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const formData = new FormData(event.currentTarget);
-    const data = Object.fromEntries(formData);
-
+  const handleFormSubmit = async (data: User) => {
     try {
-      const result = await fetch("http://localhost:3001/login", {
+      const response = await fetch("http://localhost:3001/login", {
         method: "POST",
+        body: JSON.stringify(data),
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
       });
-      const responseData = await result.json();
-      if (responseData.token) {
-        localStorage.setItem("token", responseData.token);
-        router.push("/"); // ${id}??
-      } else {
-        setError("User does not exist. Redirecting to registration...");
-        setTimeout(() => {
-          router.push("/register");
-        }, 3000);
+      if (!response.ok) {
+        throw new Error("Failed to login");
       }
+      const result = await response.json();
+      localStorage.setItem("token", result.token);
+      console.log("Logged in");
+      router.push("/");
     } catch (error) {
-      console.error("Something went wrong", error);
-      setError("Something went wrong");
+      console.log("Something went wrong!");
+      setError(
+        "Login failed. Please check your username or password and try again."
+      );
     }
   };
 
   return (
     <div className="login-page">
-      <form className="login-window" onSubmit={onSubmitTheForm}>
+      <form className="login-window" onSubmit={handleSubmit(handleFormSubmit)}>
         <h1>Login</h1>
         <label>Username</label>
         <input
           type="text"
-          required={true}
-          onChange={(event) => setUserName(event.target.value)}
-          value={userName}
-          className="input"
-          name="username"
+          id="username"
+          {...register("username")}
+          className={`${errors.username ? "error-input" : ""}`}
         />
+        {errors.username && (
+          <p className="error-message">{errors.username.message}</p>
+        )}
         <label>Password</label>
         <input
           type="password"
-          required={true}
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className="input"
-          name="password"
+          id="password"
+          {...register("password")}
+          className={`${errors.password ? "error-input" : ""}`}
         />
+        {errors.password && (
+          <p className="error-message">{errors.password.message}</p>
+        )}
         <button type="submit" className="login-button">
           Login
         </button>
