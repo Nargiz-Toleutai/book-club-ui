@@ -4,10 +4,6 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 
-interface UserData {
-  userId: number;
-}
-
 export const ProgressDataValidator = z
   .object({
     bookId: z.number(),
@@ -34,7 +30,7 @@ const getUserIdFromToken = (token: string) => {
   return JSON.parse(jsonPayload).userId;
 };
 
-const BookDetails = ({ userId }: UserData) => {
+const BookDetails = () => {
   const router = useRouter();
   const { id } = router.query;
   const [book, setBook] = useState<Book | null>(null);
@@ -76,7 +72,7 @@ const BookDetails = ({ userId }: UserData) => {
     };
 
     fetchBookDetails();
-  }, [id, token, userId]);
+  }, [id, token]);
 
   const handleCreateBookProgress = async () => {
     if (!token) return;
@@ -93,7 +89,6 @@ const BookDetails = ({ userId }: UserData) => {
         },
         body: JSON.stringify({
           bookId: Number(id),
-          userId,
           pageProgress: 0,
         }),
       });
