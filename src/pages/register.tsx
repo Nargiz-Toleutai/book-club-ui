@@ -42,7 +42,7 @@ const Register = () => {
       const responseData = await response.json();
       if (responseData.token) {
         localStorage.setItem("token", responseData.token);
-        router.push("/"); // ${id}??
+        router.push("/");
       } else {
         setError("User already exists. Redirecting to login page...");
         setTimeout(() => {
