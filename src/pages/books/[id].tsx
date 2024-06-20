@@ -18,26 +18,36 @@ export const ProgressDataValidator = z
 
 type Progress = z.infer<typeof ProgressDataValidator>;
 
+// I got this code from ChatGPT :) This isn't a required task. I received a JSON payload, parsed it, and extracted the userID. We need the userID to make the 'Start reading book' button inactive when it is pressed, and to display a message that the book is already in the progress list.
+const getUserIdFromToken = (token: string) => {
+  const base64Url = token.split(".")[1];
+  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  const jsonPayload = decodeURIComponent(
+    atob(base64)
+      .split("")
+      .map((c) => {
+        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+      })
+      .join("")
+  );
+
+  return JSON.parse(jsonPayload).userId;
+};
+
 const BookDetails = ({ userId }: UserData) => {
   const router = useRouter();
   const { id } = router.query;
   const [book, setBook] = useState<Book | null>(null);
   const [bookProgress, setBookProgress] = useState<Progress | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     const token = localStorage.getItem("token");
     setToken(token);
-    if (!token) {
-      setAuthError("You are not authorized.");
-    }
   }, [id]);
 
   useEffect(() => {
-    if (!token) return;
-
     const fetchBookDetails = async () => {
       try {
         const response = await fetch(`http://localhost:3001/books/${id}`, {
@@ -52,21 +62,21 @@ const BookDetails = ({ userId }: UserData) => {
         }
         const data = await response.json();
         setBook(data);
+
+        if (token) {
+          const currentUserId = getUserIdFromToken(token);
+          const bookProgress = data.bookProgress.find(
+            (progress: Progress) => progress.userId === currentUserId
+          );
+          if (bookProgress) setBookProgress(bookProgress);
+        }
       } catch (error) {
         console.error("Error fetching book details:", error);
       }
     };
 
     fetchBookDetails();
-  }, [id, token]);
-
-  if (authError) {
-    return (
-      <Layout>
-        <div>{authError}</div>
-      </Layout>
-    );
-  }
+  }, [id, token, userId]);
 
   const handleCreateBookProgress = async () => {
     if (!token) return;
@@ -92,7 +102,8 @@ const BookDetails = ({ userId }: UserData) => {
         return;
       }
       const responseData = await response.json();
-      setBookProgress(responseData);
+
+      setBookProgress(responseData.bookProgress);
       console.log("Book successfully added");
     } catch (error) {
       console.error("Something went wrong", error);
@@ -115,11 +126,14 @@ const BookDetails = ({ userId }: UserData) => {
         ) : (
           <h4>No current readers</h4>
         )}
-        {token && bookProgress ? (
-          <div>The book in the list</div>
-        ) : (
-          <button onClick={handleCreateBookProgress}>Start reading book</button>
-        )}
+        {token &&
+          (bookProgress ? (
+            <div>The book in the list</div>
+          ) : (
+            <button onClick={handleCreateBookProgress}>
+              Start reading book
+            </button>
+          ))}
         {bookProgress?.pageProgress !== undefined && (
           <h4>Page progress: {bookProgress.pageProgress}</h4>
         )}
